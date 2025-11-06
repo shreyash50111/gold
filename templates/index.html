@@ -8,134 +8,262 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --gold: #FFD700;
-            --dark-gold: #B8860B;
-            --tier1: #90EE90;
-            --tier2: #87CEEB;
-            --tier3: #DDA0DD;
+            --gold-primary: #FFD700;
+            --gold-dark: #FFA500;
+            --gold-light: #FFECB3;
+            --white: #FFFFFF;
+            --charcoal: #2C3E50;
+            --teal: #16A085;
+            --coral: #FF6B6B;
+            --purple: #9B59B6;
         }
         
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, var(--white) 0%, var(--gold-light) 50%, #FFF8E1 100%);
             min-height: 100vh;
             padding-bottom: 50px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         .navbar {
-            background: linear-gradient(135deg, var(--gold) 0%, var(--dark-gold) 100%) !important;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%) !important;
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+            padding: 1rem 0;
         }
         
         .navbar-brand {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #fff !important;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--white) !important;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            letter-spacing: 2px;
+        }
+        
+        .navbar-brand i {
+            color: var(--white);
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
         }
         
         .gold-rate-banner {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin: 30px 0;
+            background: linear-gradient(135deg, var(--white) 0%, var(--gold-light) 100%);
+            border: 4px solid var(--gold-primary);
+            color: var(--charcoal);
+            padding: 40px;
+            border-radius: 20px;
+            margin: 40px 0;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 15px 40px rgba(255, 215, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .gold-rate-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
         
         .gold-rate-banner h2 {
-            font-size: 2.5rem;
+            font-size: 3rem;
             margin: 10px 0;
-            font-weight: bold;
+            font-weight: 900;
+            color: var(--gold-dark);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .gold-rate-banner p {
+            font-size: 1.2rem;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
         }
         
         .tier-section {
-            margin: 30px 0;
+            margin: 40px 0;
+            animation: fadeIn 0.6s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .tier-header {
-            padding: 15px;
-            border-radius: 10px 10px 0 0;
-            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            color: var(--white);
             font-weight: bold;
-            font-size: 1.3rem;
+            font-size: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
         
-        .tier1-header { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
-        .tier2-header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-        .tier3-header { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .tier-header i {
+            font-size: 1.8rem;
+        }
+        
+        .tier1-header { 
+            background: linear-gradient(135deg, var(--teal) 0%, #1ABC9C 100%);
+            box-shadow: 0 5px 15px rgba(22, 160, 133, 0.4);
+        }
+        
+        .tier2-header { 
+            background: linear-gradient(135deg, #3498DB 0%, #5DADE2 100%);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        .tier3-header { 
+            background: linear-gradient(135deg, var(--purple) 0%, #AF7AC5 100%);
+            box-shadow: 0 5px 15px rgba(155, 89, 182, 0.4);
+        }
         
         .product-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 15px 0;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
+            background: var(--white);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border-left: 5px solid var(--gold-primary);
         }
         
         .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(255, 215, 0, 0.3);
+            border-left-color: var(--gold-dark);
         }
         
         .product-title {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
+            color: var(--charcoal);
+            margin-bottom: 15px;
         }
         
         .product-price {
-            font-size: 1.5rem;
-            color: var(--dark-gold);
-            font-weight: bold;
+            font-size: 1.8rem;
+            color: var(--gold-dark);
+            font-weight: 900;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         }
         
         .btn-refresh {
-            background: linear-gradient(135deg, var(--gold) 0%, var(--dark-gold) 100%);
-            border: none;
-            color: white;
+            background: linear-gradient(135deg, var(--white) 0%, var(--gold-light) 100%);
+            border: 3px solid var(--gold-primary);
+            color: var(--charcoal);
             padding: 12px 30px;
-            border-radius: 25px;
+            border-radius: 30px;
             font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+            transition: all 0.3s ease;
         }
         
         .btn-refresh:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold-primary) 100%);
+            color: var(--white);
+        }
+        
+        .btn-product {
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+            border: none;
+            color: var(--white);
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-product:hover {
             transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 5px 15px rgba(255, 165, 0, 0.4);
+            color: var(--white);
         }
         
         .loading-spinner {
             display: none;
             text-align: center;
-            padding: 30px;
+            padding: 50px;
         }
         
         .loading-spinner.active {
             display: block;
         }
         
+        .spinner-border {
+            width: 4rem;
+            height: 4rem;
+            border-width: 0.5rem;
+            color: var(--gold-primary) !important;
+        }
+        
         .empty-state {
             text-align: center;
-            padding: 50px;
-            color: #666;
+            padding: 60px;
+            color: var(--charcoal);
+            background: var(--white);
+            border-radius: 15px;
+            margin: 20px 0;
         }
         
         .empty-state i {
-            font-size: 4rem;
-            color: var(--gold);
-            margin-bottom: 20px;
+            font-size: 5rem;
+            color: var(--gold-primary);
+            margin-bottom: 25px;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .badge-update {
+            background: var(--coral);
+            color: var(--white);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        /* Decorative elements */
+        .sparkle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--gold-primary);
+            border-radius: 50%;
+            animation: sparkle 1.5s infinite;
+        }
+        
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <nav class="navbar navbar-expand-lg">
             <div class="container-fluid">
                 <a class="navbar-brand" href="#">
-                    <i class="fas fa-gem"></i> Goldy
+                    <i class="fas fa-gem"></i> GOLDY
                 </a>
                 <button class="btn btn-refresh ms-auto" onclick="refreshProducts()">
                     <i class="fas fa-sync-alt"></i> Refresh Deals
@@ -144,22 +272,25 @@
         </nav>
         
         <div class="gold-rate-banner">
-            <p class="mb-0"><i class="fas fa-map-marker-alt"></i> Live 24K Gold Rate - Bengaluru</p>
+            <p class="mb-2"><i class="fas fa-map-marker-alt"></i> Live 24K Gold Rate - Bengaluru</p>
             <h2>₹<span id="goldRate">12,246.00</span>/gram</h2>
-            <small id="lastUpdate">Last updated: Never</small>
+            <small id="lastUpdate" class="badge-update">Last updated: Never</small>
         </div>
         
         <div class="loading-spinner" id="loadingSpinner">
-            <div class="spinner-border text-warning" role="status" style="width: 3rem; height: 3rem;">
+            <div class="spinner-border" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <p class="mt-3">Finding the best gold deals for you...</p>
+            <p class="mt-4" style="color: var(--charcoal); font-weight: 600; font-size: 1.2rem;">
+                <i class="fas fa-search"></i> Finding the best gold deals for you...
+            </p>
         </div>
         
         <!-- Tier 1 -->
         <div class="tier-section" id="tier1Section">
             <div class="tier-header tier1-header">
-                <i class="fas fa-trophy"></i> Tier 1: Premium Deals (0.1% - 5% below market)
+                <i class="fas fa-trophy"></i>
+                <span>Tier 1: Premium Deals (0.1% - 5% below market)</span>
             </div>
             <div id="tier1Products"></div>
         </div>
@@ -167,7 +298,8 @@
         <!-- Tier 2 -->
         <div class="tier-section" id="tier2Section">
             <div class="tier-header tier2-header">
-                <i class="fas fa-star"></i> Tier 2: Great Deals (5.1% - 10% below market)
+                <i class="fas fa-star"></i>
+                <span>Tier 2: Great Deals (5.1% - 10% below market)</span>
             </div>
             <div id="tier2Products"></div>
         </div>
@@ -175,7 +307,8 @@
         <!-- Tier 3 -->
         <div class="tier-section" id="tier3Section">
             <div class="tier-header tier3-header">
-                <i class="fas fa-fire"></i> Tier 3: Amazing Deals (>10% below market)
+                <i class="fas fa-fire"></i>
+                <span>Tier 3: Amazing Deals (>10% below market)</span>
             </div>
             <div id="tier3Products"></div>
         </div>
@@ -204,7 +337,8 @@
                 container.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-inbox"></i>
-                        <p>No products found in this tier yet. Click refresh to search!</p>
+                        <p style="font-size: 1.2rem; font-weight: 600;">No products found in this tier yet.</p>
+                        <p style="color: #7f8c8d;">Click "Refresh Deals" to search for amazing offers!</p>
                     </div>
                 `;
                 return;
@@ -212,9 +346,14 @@
             
             container.innerHTML = products.map(product => `
                 <div class="product-card">
-                    <div class="product-title">${product.title || 'Gold Product'}</div>
-                    <div class="product-price">${product.price || 'Price not available'}</div>
-                    <a href="${product.url}" target="_blank" class="btn btn-sm btn-outline-warning mt-2">
+                    <div class="product-title">
+                        <i class="fas fa-tag" style="color: var(--gold-primary);"></i>
+                        ${product.title || 'Gold Product'}
+                    </div>
+                    <div class="product-price">
+                        <i class="fas fa-rupee-sign"></i> ${product.price || 'Price not available'}
+                    </div>
+                    <a href="${product.url}" target="_blank" class="btn btn-product mt-3">
                         <i class="fas fa-external-link-alt"></i> View Product
                     </a>
                 </div>
