@@ -21,7 +21,7 @@ SEEN_URLS_FILE = "seen_urls.json"
 
 # --- INIT ---
 tclient = TavilyClient(TAVILY_API_KEY)
-gclient = genai.Client(api_key=GEMINI_API_KEY)
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 # Cache for products and gold rate
 cache = {
@@ -131,7 +131,10 @@ Return JSON:
   "multiple_prices": [{{"variant": "...", "price": "..."}}]
 }}
 """
-    response = gclient.models.generate_content(model="gemini-2.0-flash-exp", contents=prompt)
+    response = client.models.generate_content(
+        model="gemini-2.0-flash-exp",
+        contents=prompt
+    )
     return response.text
 
 # === AI Tiering by Price vs Gold Rate ===
@@ -155,7 +158,10 @@ Products JSON:
 {product_json}
 Current gold price: {base_price}
 """
-    response = gclient.models.generate_content(model="gemini-2.0-flash-exp", contents=prompt)
+    response = client.models.generate_content(
+        model="gemini-2.0-flash-exp",
+        contents=prompt
+    )
     return response.text
 
 # === Background Update Function ===
