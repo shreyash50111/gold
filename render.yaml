@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: goldy
+    env: python
+    buildCommand: |
+      pip install -r requirements.txt
+      apt-get update && apt-get install -y wget unzip
+      wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+      apt-get install -y ./google-chrome-stable_current_amd64.deb
+      wget -q https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip
+      unzip chromedriver_linux64.zip
+      mv chromedriver /usr/local/bin/
+      chmod +x /usr/local/bin/chromedriver
+    startCommand: gunicorn app:app
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
