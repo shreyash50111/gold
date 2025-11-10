@@ -403,10 +403,9 @@
         function refreshProducts() {
             document.getElementById('loadingSpinner').classList.add('active');
             document.getElementById('searchProgress').style.display = 'block';
-            document.getElementById('loadingMessage').textContent = 'Searching for new deals...';
+            document.getElementById('loadingMessage').textContent = 'Searching for deals... This will continue until products are found!';
             
             let pollCount = 0;
-            const maxPolls = 100; // Poll for up to ~8 minutes (100 * 5s)
             
             fetch('/api/refresh')
                 .then(response => response.json())
@@ -419,10 +418,12 @@
                             fetch('/api/products')
                                 .then(response => response.json())
                                 .then(productData => {
-                                    // Update progress
-                                    const progress = Math.min((pollCount / maxPolls) * 100, 95);
+                                    // Animate progress bar continuously
+                                    const progress = (pollCount % 20) * 5; // Cycles from 0-100
                                     document.getElementById('progressBar').style.width = progress + '%';
                                     document.getElementById('progressBar').setAttribute('aria-valuenow', progress);
+                                    document.getElementById('progressText').textContent = 
+                                        `Searching continuously... (${Math.floor(pollCount * 5 / 60)}m ${(pollCount * 5) % 60}s)`;
                                     
                                     // Show products found
                                     const total = productData.products_found.tier1 + 
@@ -430,37 +431,40 @@
                                                  productData.products_found.tier3;
                                     
                                     if (total > 0) {
-                                        document.getElementById('productsFoundText').textContent = 
-                                            `🎉 Found ${total} products! Tier 1: ${productData.products_found.tier1}, ` +
-                                            `Tier 2: ${productData.products_found.tier2}, Tier 3: ${productData.products_found.tier3}`;
+                                        document.getElementById('productsFoundText').innerHTML = 
+                                            `<i class="fas fa-check-circle"></i> 🎉 Found ${total} products! ` +
+                                            `Tier 1: ${productData.products_found.tier1}, ` +
+                                            `Tier 2: ${productData.products_found.tier2}, ` +
+                                            `Tier 3: ${productData.products_found.tier3}`;
+                                        document.getElementById('productsFoundText').style.color = 'var(--teal)';
                                     } else {
-                                        document.getElementById('productsFoundText').textContent = 
-                                            `⏳ Still searching for deals... (${pollCount * 5}s elapsed)`;
+                                        document.getElementById('productsFoundText').innerHTML = 
+                                            `<i class="fas fa-spinner fa-spin"></i> ⏳ Still searching for deals... ` +
+                                            `Won't stop until we find something! (${Math.floor(pollCount * 5 / 60)}m ${(pollCount * 5) % 60}s elapsed)`;
+                                        document.getElementById('productsFoundText').style.color = 'var(--gold-dark)';
                                     }
                                     
-                                    if (!productData.is_updating) {
+                                    // Check if search is complete (found products and stopped updating)
+                                    if (!productData.is_updating && total > 0) {
                                         clearInterval(pollInterval);
                                         document.getElementById('progressBar').style.width = '100%';
-                                        document.getElementById('progressText').textContent = 'Complete!';
+                                        document.getElementById('progressText').textContent = 'Complete! Found products!';
+                                        document.getElementById('loadingMessage').textContent = 
+                                            `✅ Search completed successfully after ${Math.floor(pollCount * 5 / 60)}m ${(pollCount * 5) % 60}s!`;
                                         
                                         setTimeout(() => {
                                             loadProducts();
                                             document.getElementById('searchProgress').style.display = 'none';
-                                        }, 1000);
+                                        }, 2000);
                                     }
-                                    
-                                    // If we've been polling too long, stop
-                                    if (pollCount >= maxPolls) {
-                                        clearInterval(pollInterval);
-                                        document.getElementById('loadingMessage').textContent = 
-                                            'Search completed. Showing available products.';
-                                        loadProducts();
-                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error polling products:', error);
                                 });
                         }, 5000);
                     } else {
                         document.getElementById('loadingMessage').textContent = 
-                            'A search is already in progress...';
+                            'A search is already in progress... Please wait!';
                         setTimeout(() => {
                             document.getElementById('loadingSpinner').classList.remove('active');
                             document.getElementById('searchProgress').style.display = 'none';
