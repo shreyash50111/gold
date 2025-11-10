@@ -178,68 +178,94 @@ def update_products_background():
         cache["gold_rate"] = gold_rate
 
         all_products = []
-        max_attempts = 50  # Try up to 50 URLs
         urls_tried = 0
+        search_rounds = 0
         
-        # Keep searching until we have products in at least one tier
-        while urls_tried < max_attempts:
+        print("🔍 Starting continuous search until products are found in tiers...")
+        
+        # Keep searching FOREVER until we have products in at least one tier
+        while True:
+            search_rounds += 1
+            print(f"\n🔄 Search Round {search_rounds}")
+            
+            # Fetch new URLs
             urls = fetch_urls()
+            
+            # Filter for new or old URLs (reset after a week)
             new_urls = [u for u in urls if u not in seen_urls or now - seen_urls[u] > week_sec]
             
             if not new_urls:
-                print("No new URLs found, fetching more...")
-                urls_tried += len(urls)
+                print("⚠️ No new URLs in this batch. Fetching fresh URLs...")
+                # Wait a bit before trying again
+                time.sleep(5)
                 continue
             
-            # Process URLs in batches
-            batch_size = 5
-            for url in new_urls[:batch_size]:
+            # Process URLs one by one
+            for url in new_urls:
                 urls_tried += 1
-                print(f"🔍 Scraping {url} (Attempt {urls_tried}/{max_attempts})")
+                print(f"🔍 Scraping URL #{urls_tried}: {url}")
                 try:
                     data = extract_product_data(url)
-                    all_products.append(data)
-                    seen_urls[url] = now
-                except Exception as e:
-                    print(f"Error extracting {url}:", e)
-            
-            # Try to tier the products we have so far
-            if all_products:
-                tiers_raw = ai_tier_product(all_products, gold_rate)
-                try:
-                    # Clean up markdown code blocks if present
-                    tiers_clean = tiers_raw.replace("```json", "").replace("```", "").strip()
-                    tiers = json.loads(tiers_clean)
                     
-                    # Check if we have products in any tier
-                    has_products = (len(tiers.get("tier1", [])) > 0 or 
-                                  len(tiers.get("tier2", [])) > 0 or 
-                                  len(tiers.get("tier3", [])) > 0)
-                    
-                    if has_products:
-                        cache["tiers"] = tiers
-                        print(f"✅ Found products! Tier1: {len(tiers.get('tier1', []))}, Tier2: {len(tiers.get('tier2', []))}, Tier3: {len(tiers.get('tier3', []))}")
-                        break
+                    # Only add if it looks like valid product data
+                    if data and len(data.strip()) > 50:
+                        all_products.append(data)
+                        seen_urls[url] = now
+                        print(f"✅ Product data extracted (Total products: {len(all_products)})")
                     else:
-                        print(f"No products in tiers yet. Tried {urls_tried} URLs. Continuing...")
+                        print("⚠️ No valid product data found on this page")
                         
                 except Exception as e:
-                    print("Error parsing tiers JSON:", e)
-                    print("Raw response:", tiers_raw)
+                    print(f"❌ Error extracting {url}: {e}")
+                    continue
+                
+                # Try to tier products after every 3 new products
+                if len(all_products) >= 3 and len(all_products) % 3 == 0:
+                    print(f"\n🏷️ Attempting to tier {len(all_products)} products...")
+                    tiers_raw = ai_tier_product(all_products, gold_rate)
+                    
+                    try:
+                        # Clean up markdown code blocks if present
+                        tiers_clean = tiers_raw.replace("```json", "").replace("```", "").strip()
+                        tiers = json.loads(tiers_clean)
+                        
+                        # Check if we have products in any tier
+                        tier1_count = len(tiers.get("tier1", []))
+                        tier2_count = len(tiers.get("tier2", []))
+                        tier3_count = len(tiers.get("tier3", []))
+                        
+                        has_products = tier1_count > 0 or tier2_count > 0 or tier3_count > 0
+                        
+                        print(f"📊 Tier Results - Tier1: {tier1_count}, Tier2: {tier2_count}, Tier3: {tier3_count}")
+                        
+                        if has_products:
+                            cache["tiers"] = tiers
+                            print(f"🎉 SUCCESS! Found products in tiers after trying {urls_tried} URLs!")
+                            save_seen_urls(seen_urls)
+                            cache["last_update"] = time.time()
+                            return  # EXIT - We found products!
+                        else:
+                            print(f"⏳ No products in tiers yet. Continuing search... (Tried {urls_tried} URLs)")
+                            
+                    except Exception as e:
+                        print(f"❌ Error parsing tiers JSON: {e}")
+                        print(f"Raw response: {tiers_raw[:200]}...")
+                
+                # Small delay between requests to avoid rate limiting
+                time.sleep(2)
             
-            # If we've tried enough URLs without success, stop
-            if urls_tried >= max_attempts:
-                print(f"Reached maximum attempts ({max_attempts}). Stopping search.")
-                break
-
-        save_seen_urls(seen_urls)
-        cache["last_update"] = time.time()
-        
+            # After processing all URLs in this batch, continue to next batch
+            print(f"📦 Completed batch. Total URLs tried: {urls_tried}. Fetching more URLs...")
+            save_seen_urls(seen_urls)
+            
     except Exception as e:
-        print(f"Error in background update: {e}")
+        print(f"❌ Critical error in background update: {e}")
+        import traceback
+        traceback.print_exc()
     
     finally:
         cache["is_updating"] = False
+        print("🛑 Search stopped.")
 
 # === Flask Routes ===
 @app.route('/')
