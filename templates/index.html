@@ -282,8 +282,22 @@
                 <span class="visually-hidden">Loading...</span>
             </div>
             <p class="mt-4" style="color: var(--charcoal); font-weight: 600; font-size: 1.2rem;">
-                <i class="fas fa-search"></i> Finding the best gold deals for you...
+                <i class="fas fa-search"></i> <span id="loadingMessage">Finding the best gold deals for you...</span>
             </p>
+            <div id="searchProgress" class="mt-3" style="display: none;">
+                <div class="progress" style="height: 30px; border-radius: 15px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         style="background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);"
+                         role="progressbar" 
+                         aria-valuenow="0" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100" 
+                         id="progressBar">
+                        <span id="progressText" style="font-weight: bold;">Searching...</span>
+                    </div>
+                </div>
+                <p class="mt-2" id="productsFoundText" style="font-weight: 600; color: var(--teal);"></p>
+            </div>
         </div>
         
         <!-- Tier 1 -->
@@ -388,6 +402,11 @@
         
         function refreshProducts() {
             document.getElementById('loadingSpinner').classList.add('active');
+            document.getElementById('searchProgress').style.display = 'block';
+            document.getElementById('loadingMessage').textContent = 'Searching for new deals...';
+            
+            let pollCount = 0;
+            const maxPolls = 100; // Poll for up to ~8 minutes (100 * 5s)
             
             fetch('/api/refresh')
                 .then(response => response.json())
@@ -395,20 +414,63 @@
                     if (data.status === 'started') {
                         // Poll for updates every 5 seconds
                         const pollInterval = setInterval(() => {
+                            pollCount++;
+                            
                             fetch('/api/products')
                                 .then(response => response.json())
                                 .then(productData => {
+                                    // Update progress
+                                    const progress = Math.min((pollCount / maxPolls) * 100, 95);
+                                    document.getElementById('progressBar').style.width = progress + '%';
+                                    document.getElementById('progressBar').setAttribute('aria-valuenow', progress);
+                                    
+                                    // Show products found
+                                    const total = productData.products_found.tier1 + 
+                                                 productData.products_found.tier2 + 
+                                                 productData.products_found.tier3;
+                                    
+                                    if (total > 0) {
+                                        document.getElementById('productsFoundText').textContent = 
+                                            `🎉 Found ${total} products! Tier 1: ${productData.products_found.tier1}, ` +
+                                            `Tier 2: ${productData.products_found.tier2}, Tier 3: ${productData.products_found.tier3}`;
+                                    } else {
+                                        document.getElementById('productsFoundText').textContent = 
+                                            `⏳ Still searching for deals... (${pollCount * 5}s elapsed)`;
+                                    }
+                                    
                                     if (!productData.is_updating) {
                                         clearInterval(pollInterval);
+                                        document.getElementById('progressBar').style.width = '100%';
+                                        document.getElementById('progressText').textContent = 'Complete!';
+                                        
+                                        setTimeout(() => {
+                                            loadProducts();
+                                            document.getElementById('searchProgress').style.display = 'none';
+                                        }, 1000);
+                                    }
+                                    
+                                    // If we've been polling too long, stop
+                                    if (pollCount >= maxPolls) {
+                                        clearInterval(pollInterval);
+                                        document.getElementById('loadingMessage').textContent = 
+                                            'Search completed. Showing available products.';
                                         loadProducts();
                                     }
                                 });
                         }, 5000);
+                    } else {
+                        document.getElementById('loadingMessage').textContent = 
+                            'A search is already in progress...';
+                        setTimeout(() => {
+                            document.getElementById('loadingSpinner').classList.remove('active');
+                            document.getElementById('searchProgress').style.display = 'none';
+                        }, 2000);
                     }
                 })
                 .catch(error => {
                     console.error('Error refreshing products:', error);
                     document.getElementById('loadingSpinner').classList.remove('active');
+                    document.getElementById('searchProgress').style.display = 'none';
                 });
         }
         
