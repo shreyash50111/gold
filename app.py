@@ -66,11 +66,186 @@ def get_gold_rate_bengaluru():
         print("Error fetching gold rate:", e)
         return 12246.0
 
-# === Tavily Search ===
-def fetch_urls():
-    response = tclient.search(query="24k 1 gram gold products", max_results=20, country="india")
-    urls = [i["url"] for i in response["results"]]
-    return urls
+# === Dynamic Query Generator using Gemini ===
+def generate_dynamic_queries(base_price):
+    """Generate additional search queries on-the-fly using Gemini"""
+    prompt = f"""
+Generate 20 diverse search queries for finding 24k 1 gram gold products online in India.
+
+Current market rate: ₹{base_price} per gram
+
+Requirements for queries:
+- Must include price constraints like "under ₹{int(base_price)}", "below {int(base_price)} rupees", "less than ₹{int(base_price)}"
+- Focus on products CHEAPER than market rate
+- Include Indian shopping terms and contexts
+- Mix of brand names, product types, and price-focused searches
+- Include regional variations (Hindi/English mix acceptable)
+- Must be realistic queries someone would search on Google/shopping sites
+
+Return ONLY a JSON array of strings (no other text):
+["query 1", "query 2", ...]
+
+Example format:
+["24k gold coin 1 gram under ₹{int(base_price)}", "cheap 1g pure gold below market price"]
+"""
+    
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-exp",
+            contents=prompt
+        )
+        
+        # Parse the response
+        query_text = response.text.strip()
+        # Remove markdown code blocks if present
+        query_text = query_text.replace("```json", "").replace("```", "").strip()
+        queries = json.loads(query_text)
+        
+        if isinstance(queries, list) and len(queries) > 0:
+            print(f"   🤖 Generated {len(queries)} dynamic queries using AI")
+            return queries
+        else:
+            print("   ⚠️ Invalid query format from Gemini")
+            return []
+    except Exception as e:
+        print(f"   ⚠️ Error generating dynamic queries: {e}")
+        return []
+
+# === Tavily Search with Dynamic Queries ===
+def fetch_urls(search_round=0, gold_rate=12246.0):
+    # Base queries with price constraints
+    base_queries = [
+        # Price-focused searches
+        f"24k 1 gram gold under ₹{int(gold_rate)} India",
+        f"1 gram gold coin below {int(gold_rate)} rupees",
+        f"24 karat 1g gold less than ₹{int(gold_rate)}",
+        f"cheap 1 gram pure gold under {int(gold_rate)} INR",
+        f"discounted 24k gold 1g below market price",
+        f"1 gram gold bar under ₹{int(gold_rate)} online",
+        f"affordable 24 carat 1g gold below {int(gold_rate)}",
+        
+        # Direct product searches with rupees
+        "24k 1 gram gold products India rupees price",
+        "buy 1 gram gold coin 24 karat online price INR",
+        "24k gold 1g bar price India rupees buy",
+        "pure gold 1 gram jewelry online INR shopping",
+        "24 carat gold 1 gram buy online India price list",
+        "1 gram 999 purity gold product rupees online",
+        "24k hallmarked gold 1 gram INR purchase",
+        "fine gold 1g coin purchase India online shopping",
+        "sovereign gold 1 gram online buy india",
+        "gold biscuit 1 gram 24k buy India price",
+        
+        # Investment focused
+        "certified 24 karat 1 gram gold investment online",
+        "investment gold 1g bar India rupees buy",
+        "24k gold wafer 1 gram online price shopping",
+        "pure gold pendant 1 gram 24k INR buy",
+        "gold chip 1 gram 999 purity buy online",
+        "digital gold 1 gram 24k purchase India",
+        "gold savings 1 gram pure online buy",
+        "small gold investment 1g India online",
+        
+        # Brand/retailer specific
+        "tanishiq 1 gram gold coin 24k price online",
+        "malabar gold 1 gram 24 karat price buy",
+        "kalyan jewellers 1g gold product online",
+        "joyalukkas 1 gram pure gold buy online",
+        "PC jeweller 1g 24k gold online shopping",
+        "senco gold 1 gram coin price buy",
+        "reliance jewels 1g gold 24k online",
+        "amazon 1 gram gold coin 24k India buy",
+        "flipkart gold 1g 24 karat shopping",
+        "paytm 1 gram gold 24k buy online",
+        "phonepe gold 1g 24 karat purchase",
+        
+        # Specific product types
+        "24k gold bar 1 gram India online buy",
+        "gold coin 1g 999 purity buy shopping",
+        "lakshmi gold coin 1 gram 24k online",
+        "ganesh gold coin 1g pure buy India",
+        "gold round 1 gram 24 karat online",
+        "gold nugget 1g pure online shopping",
+        "gold ingot 1 gram 24k India buy",
+        "gold bullion 1g 999 purity online",
+        "gold chip 1 gram investment buy",
+        
+        # Price comparison searches
+        "cheapest 1 gram gold 24k India online",
+        "best price 1g gold coin online buy",
+        "lowest rate 24k gold 1 gram India",
+        "discount 1 gram pure gold buy online",
+        "offer 24 karat gold 1g India shopping",
+        "sale 1 gram gold product online buy",
+        "deal 24k gold 1g India online",
+        "promo 1 gram pure gold buy",
+        
+        # City specific
+        "bengaluru 1 gram gold 24k online buy",
+        "bangalore gold 1g pure buy shopping",
+        "mumbai 1 gram 24k gold price online",
+        "delhi 1g gold coin online buy",
+        "chennai 24 karat 1 gram gold shopping",
+        "hyderabad 1g pure gold buy online",
+        "pune 1 gram gold 24k online",
+        "kolkata 24 karat 1g gold buy",
+        
+        # Quality focused with price
+        "BIS hallmark 1 gram gold 24k price",
+        "certified pure gold 1g India buy",
+        "authentic 24k gold 1 gram buy online",
+        "genuine 1g gold 999 purity shopping",
+        "guaranteed 24 karat gold 1 gram buy",
+        "verified gold 1g pure online purchase",
+        
+        # Additional variations
+        "one gram gold 24 carat India buy",
+        "1gm 24kt gold product online shopping",
+        "single gram pure gold buy online",
+        "mini gold bar 1g 24k buy",
+        "small gold coin 1 gram India online",
+        "pocket gold 1g 999 purity buy",
+        "affordable 24k gold 1 gram shopping",
+        "gold gifting 1g pure online buy",
+        
+        # E-commerce focused
+        "1 gram gold online shopping India",
+        "buy 24k gold 1g delivery India",
+        "gold 1 gram home delivery online",
+        "1g pure gold cash on delivery",
+        "24 karat 1 gram gold free shipping",
+        
+        # Occasion based
+        "wedding gold coin 1 gram 24k",
+        "diwali gold 1g 24 karat online",
+        "gift gold coin 1 gram pure",
+        "festival gold 1g buy online India"
+    ]
+    
+    # Every 10 rounds, generate fresh queries using Gemini
+    if search_round > 0 and search_round % 10 == 0:
+        print(f"\n🤖 Generating dynamic queries using AI (Round {search_round})...")
+        dynamic_queries = generate_dynamic_queries(gold_rate)
+        if dynamic_queries:
+            # Add dynamic queries to the pool
+            all_queries = base_queries + dynamic_queries
+        else:
+            all_queries = base_queries
+    else:
+        all_queries = base_queries
+    
+    # Select query based on search round
+    query = all_queries[search_round % len(all_queries)]
+    print(f"🔍 Search Query #{search_round + 1}: '{query}'")
+    
+    try:
+        response = tclient.search(query=query, max_results=25, country="india")
+        urls = [i["url"] for i in response["results"]]
+        print(f"   📥 Received {len(urls)} URLs from search")
+        return urls
+    except Exception as e:
+        print(f"   ❌ Error in Tavily search: {e}")
+        return []
 
 # === Selenium Scraper (Render-compatible) ===
 def get_chrome_driver():
@@ -117,19 +292,28 @@ def get_all_visible_text(url, scroll_pause=1, max_scrolls=15):
 def extract_product_data(url):
     chunk = get_all_visible_text(url)
     prompt = f"""
-Extract the following from this chunk of {chunk}:
+Extract the following from this webpage content:
 - product title
-- all prices with variants
-- keep lowest price in "price"
-- url:{url}
-Only keep actual 24k 1 gram gold *products* (ignore gold rates, charts, or city-specific pages).
+- all prices with variants (MUST be in Indian Rupees ₹ or INR)
+- keep lowest price in "price" field
+- url: {url}
+
+IMPORTANT: 
+- Only extract actual 24k or 999 purity 1 gram gold *products* (ignore gold rates, charts, or city-specific rate pages)
+- Prices MUST be in Indian Rupees (₹/INR)
+- Include the ₹ symbol or "INR" in the price field
+- If no valid products found, return empty JSON
+
 Return JSON:
 {{
-  "title": "",
-  "price": "",
-  "url": "",
-  "multiple_prices": [{{"variant": "...", "price": "..."}}]
+  "title": "product name",
+  "price": "₹X,XXX or INR X,XXX",
+  "url": "{url}",
+  "multiple_prices": [{{"variant": "...", "price": "₹..."}}]
 }}
+
+Webpage content:
+{chunk[:5000]}
 """
     response = client.models.generate_content(
         model="gemini-2.0-flash-exp",
@@ -140,23 +324,31 @@ Return JSON:
 # === AI Tiering by Price vs Gold Rate ===
 def ai_tier_product(product_json, base_price):
     prompt = f"""
-You are a data extraction assistant.
-Parse the following JSON list and tier products based on price vs gold rate.
+You are a data extraction assistant for gold product pricing.
 
-Rules:
-- Tier1: 0.1% – 5% lower than gold price
-- Tier2: 5.1% – 10% lower
-- Tier3: >10.1% lower
-Return JSON only:
+CRITICAL INSTRUCTIONS:
+1. All prices MUST be in Indian Rupees (₹/INR)
+2. Parse prices carefully - extract numeric values from formats like "₹5,240" or "INR 5240"
+3. Compare each product's price against the current gold rate: ₹{base_price} per gram
+
+Tiering Rules (based on percentage below market rate):
+- Tier1: 0.1% – 5% lower than ₹{base_price}
+- Tier2: 5.1% – 10% lower than ₹{base_price}
+- Tier3: More than 10.1% lower than ₹{base_price}
+
+Products that are equal to or MORE expensive than ₹{base_price} should be EXCLUDED from all tiers.
+
+Return JSON only (no markdown):
 {{
-  "tier1": [...],
-  "tier2": [...],
-  "tier3": [...]
+  "tier1": [products with prices 0.1%-5% below ₹{base_price}],
+  "tier2": [products with prices 5.1%-10% below ₹{base_price}],
+  "tier3": [products with prices >10.1% below ₹{base_price}]
 }}
 
-Products JSON:
+Products to analyze:
 {product_json}
-Current gold price: {base_price}
+
+Current 24K gold market rate in Bengaluru: ₹{base_price} per gram
 """
     response = client.models.generate_content(
         model="gemini-2.0-flash-exp",
@@ -180,6 +372,7 @@ def update_products_background():
         all_products = []
         urls_tried = 0
         search_rounds = 0
+        consecutive_no_new_urls = 0
         
         print("🔍 Starting continuous search until products are found in tiers...")
         
@@ -188,17 +381,37 @@ def update_products_background():
             search_rounds += 1
             print(f"\n🔄 Search Round {search_rounds}")
             
-            # Fetch new URLs
-            urls = fetch_urls()
+            # Fetch new URLs with rotating queries
+            urls = fetch_urls(search_rounds)
+            
+            if not urls:
+                print("⚠️ No URLs returned from search. Retrying...")
+                time.sleep(5)
+                continue
             
             # Filter for new or old URLs (reset after a week)
             new_urls = [u for u in urls if u not in seen_urls or now - seen_urls[u] > week_sec]
             
             if not new_urls:
-                print("⚠️ No new URLs in this batch. Fetching fresh URLs...")
-                # Wait a bit before trying again
+                consecutive_no_new_urls += 1
+                print(f"⚠️ No new URLs in this batch. Consecutive strikes: {consecutive_no_new_urls}")
+                
+                # If we've hit too many consecutive rounds with no new URLs, reset the seen_urls partially
+                if consecutive_no_new_urls >= 3:
+                    print("🔄 Resetting old URL cache to get fresh results...")
+                    # Keep only URLs from the last hour
+                    hour_ago = now - 3600
+                    seen_urls = {url: timestamp for url, timestamp in seen_urls.items() if timestamp > hour_ago}
+                    consecutive_no_new_urls = 0
+                    save_seen_urls(seen_urls)
+                
+                # Wait before trying with a different query
                 time.sleep(5)
                 continue
+            else:
+                consecutive_no_new_urls = 0  # Reset counter when we find new URLs
+            
+            print(f"📦 Found {len(new_urls)} new URLs to process")
             
             # Process URLs one by one
             for url in new_urls:
@@ -254,9 +467,12 @@ def update_products_background():
                 # Small delay between requests to avoid rate limiting
                 time.sleep(2)
             
-            # After processing all URLs in this batch, continue to next batch
-            print(f"📦 Completed batch. Total URLs tried: {urls_tried}. Fetching more URLs...")
+            # After processing all URLs in this batch, save progress and continue
+            print(f"📦 Completed batch. Total URLs tried: {urls_tried}. Rotating to next query...")
             save_seen_urls(seen_urls)
+            
+            # Small delay before next search round
+            time.sleep(3)
             
     except Exception as e:
         print(f"❌ Critical error in background update: {e}")
