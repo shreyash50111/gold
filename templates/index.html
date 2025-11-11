@@ -433,14 +433,16 @@
                                     if (total > 0) {
                                         document.getElementById('productsFoundText').innerHTML = 
                                             `<i class="fas fa-check-circle"></i> 🎉 Found ${total} products! ` +
-                                            `Tier 1: ${productData.products_found.tier1}, ` +
-                                            `Tier 2: ${productData.products_found.tier2}, ` +
-                                            `Tier 3: ${productData.products_found.tier3}`;
+                                            `Tier 1: <strong>${productData.products_found.tier1}</strong>, ` +
+                                            `Tier 2: <strong>${productData.products_found.tier2}</strong>, ` +
+                                            `Tier 3: <strong>${productData.products_found.tier3}</strong>`;
                                         document.getElementById('productsFoundText').style.color = 'var(--teal)';
                                     } else {
+                                        const emojis = ['🔍', '💎', '⚡', '🎯', '🔎'];
+                                        const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
                                         document.getElementById('productsFoundText').innerHTML = 
-                                            `<i class="fas fa-spinner fa-spin"></i> ⏳ Still searching for deals... ` +
-                                            `Won't stop until we find something! (${Math.floor(pollCount * 5 / 60)}m ${(pollCount * 5) % 60}s elapsed)`;
+                                            `<i class="fas fa-spinner fa-spin"></i> ${randomEmoji} Still searching with different queries... ` +
+                                            `Won't stop until we find something! <strong>(${Math.floor(pollCount * 5 / 60)}m ${(pollCount * 5) % 60}s)</strong>`;
                                         document.getElementById('productsFoundText').style.color = 'var(--gold-dark)';
                                     }
                                     
